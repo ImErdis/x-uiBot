@@ -1,0 +1,14 @@
+mode: prod
+prod:
+  - botname: VingPN
+    username: VingPNBot
+    admin: 5818413947
+    subscription-domain: "sub.erdis.club"
+    token: 
+      6288043295:AAGe9NcCJn8Vz8zcf9J7kQPTX-kOG8sJHXk
+    about:
+      "this is some short text about my bot"
+    description:
+      "This is a description of what my bot can do which customer will use"
+    database:
+      "mongodb+srv://V2rayCS:6chWhR4lh1E85Zwx@cluster0.e69z1kj.mongodb.net/?retryWrites=true&w=majority"
