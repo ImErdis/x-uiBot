@@ -40,12 +40,11 @@ async def check_loop(bot):
     for subscription in subscriptions:
         servers = subscription['servers']
         clients = subscription['clients']
-        to_be_removed = []
         for server in servers:
             server = svs.find_one({'_id': server})
             try:
                 e = util.get_inbound(f'http://{server["ip"]}:{server["port"]}', server['user'], server['password'],
-                                 server['inbound_id'])
+                                     server['inbound_id'])
             except httpx.ConnectTimeout:
                 pass
             client_stats = e['clientStats']
@@ -55,23 +54,27 @@ async def check_loop(bot):
                         client['usage_per_server'] = {}
                     try:
                         if client_stat['email'] in client['servers'].values():
-                            client['usage_per_server'][f'{server["_id"]}'] = client_stat['down'] / math.pow(1024, 3) + client_stat['up'] / math.pow(
+                            client['usage_per_server'][f'{server["_id"]}'] = client_stat['down'] / math.pow(1024, 3) + \
+                                                                             client_stat['up'] / math.pow(
                                 1024, 3)
                             client['usage'] = sum(client['usage_per_server'].values())
-                            if client_stat['expiryTime'] < int(datetime.now().timestamp() * 1000) or client['usage'] >= \
-                                    subscription['traffic']:
-                                to_be_removed.append(client) if client not in to_be_removed else None
-                                try:
-                                    util.remove_client(f'http://{server["ip"]}:{server["port"]}', server['user'],
-                                                       server['password'], client_stat['email'])
-                                except ModuleNotFoundError:
-                                    pass
                     except AttributeError:
                         pass
-        for c in to_be_removed:
-            clients.remove(c)
 
         subs.update_one({'_id': subscription['_id']}, {'$set': {'clients': clients}})
+    for subscription in subscriptions:
+        for client in subscription['clients']:
+            if (client['usage'] >= subscription['traffic']) or (
+                    client['when'] < int(datetime.now().timestamp() * 1000)):
+                for sv in subscription['servers']:
+                    server = servers.find_one({'_id': sv})
+                    try:
+                        util.remove_client(f'http://{server["ip"]}:{server["port"]}', server['user'],
+                                           server['password'], client['servers'][f"{server['_id']}"])
+                    except ModuleNotFoundError:
+                        pass
+                subscription['clients'].remove(client)
+        subscriptions.update_one({'name': subscription['name']}, {'$set': {'clients': subscription['clients']}})
 
 
 main()
