@@ -6,10 +6,11 @@ index all function handlers
 
 
 # imports here -----------------------
-from .start import start
+from .start import start, remaining
 
 command_map = {
     'start': start,
+    'remaining': remaining
     }
 
 # --------------------------------------

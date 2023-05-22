@@ -10,10 +10,10 @@ from configuration import Config
 
 config = Config('configuration.yaml')
 
-servers = config.get_db().servers
+groups = config.get_db().groups
 subs = config.get_db().subscriptions
 
-NAME, DURATION, USERS, TRAFFIC, SERVERS = range(5)
+GROUP, NAME, DURATION, USERS, TRAFFIC = range(5)
 SUBSCRIPTION = {}
 reply_markup = InlineKeyboardMarkup([
     [InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_create_subscription")]
@@ -26,11 +26,38 @@ async def create_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await query.answer()
 
-    if not servers.find({}):
-        await query.edit_message_text('برای ساخت اشتراک حداقل باید یک سرور وجود داشته باشد',
+    if not groups.find({}):
+        await query.edit_message_text('برای ساخت اشتراک حداقل باید یک گروه وجود داشته باشد',
                                       reply_markup=InlineKeyboardMarkup(
                                           [[InlineKeyboardButton('پنل ادمین', callback_data="admin")]]))
         return ConversationHandler.END
+
+    group_list = [x for x in groups.find({})]
+    keyboard = [
+        [InlineKeyboardButton(x['name'], callback_data=f'group_{x["name"]}'),
+         InlineKeyboardButton('✅' if x['status'] == "Active" else '❌',
+                              callback_data=f'group_{x["name"]}')] for x in group_list
+    ]
+    keyboard.append([InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_create_subscription")])
+
+    await query.edit_message_text("گروه مورد نظر را انتخاب کنید", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    return GROUP
+
+
+async def group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Stores the sent server message"""
+    query = update.callback_query
+    await query.answer()
+    user = query.from_user
+
+    SUBSCRIPTION[f'{user.id}'] = {
+        'name': None,
+        'duration': 0,
+        'group': query.data[6:],
+        'users': 0,
+        'traffic': 0
+    }
 
     await query.edit_message_text("لطفا اسم اشتراک را ارسال کنید.", reply_markup=reply_markup)
 
@@ -40,19 +67,12 @@ async def create_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the sent server message"""
     user = update.message.from_user
-    if subs.find_one({'name': update.message.text}):
+    if subs.find_one({'group': SUBSCRIPTION[f'{user.id}']['group'], 'name': update.message.text}):
         await update.message.reply_text('نام هر اشتراک باید متفاوت باشد لطفا نام جدید بفرستید',
                                         reply_markup=reply_markup)
         return NAME
 
-    SUBSCRIPTION[f'{user.id}'] = {
-        'name': update.message.text,
-        'duration': 0,
-        'servers': [],
-        'users': 0,
-        'traffic': 0,
-        'clients': []
-    }
+    SUBSCRIPTION[f'{user.id}']['name'] = update.message.text
 
     await update.message.reply_text(
         "رواله, "
@@ -93,66 +113,13 @@ async def traffic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def users(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the sent server message"""
     user = update.message.from_user
-
     SUBSCRIPTION[f'{user.id}']['allowed_users'] = int(update.message.text)
+    subs.insert_one(SUBSCRIPTION[f'{user.id}'])
+    del SUBSCRIPTION[f'{user.id}']
+    await update.message.reply_text('لطفا برای بازگشت /start یا دکمه زیر را فشار دهید', reply_markup=InlineKeyboardMarkup(
+        [[InlineKeyboardButton('پنل ادمین', callback_data="admin")]]))
 
-    servers_list = [x for x in servers.find({})]
-    keyboard = [
-        [InlineKeyboardButton(x['name'], callback_data=f'subserver_{x["name"]}'),
-         InlineKeyboardButton('✅' if x['_id'] in SUBSCRIPTION[f'{user.id}'].get('servers', []) else '❌',
-                              callback_data=f'subserver_{x["name"]}')] for x in servers_list
-    ]
-    keyboard.append([InlineKeyboardButton('✅' + ' مرحله بعد', callback_data='create_subscription_done')])
-
-    await update.message.reply_text(
-        "رواله, "
-        "سرورایی ک میخوای تو اشتراک باشن رو انتخاب کن.", reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-    return SERVERS
-
-
-async def subservers(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the sent server message"""
-    query = update.callback_query
-    await query.answer()
-    user = query.from_user
-
-    if query.data != "create_subscription_done":
-        server = servers.find_one({'name': query.data[10:]})
-        if server['_id'] not in SUBSCRIPTION[f'{user.id}'].get('servers', []):
-            SUBSCRIPTION[f'{user.id}']['servers'].append(server['_id'])
-        else:
-            SUBSCRIPTION[f'{user.id}']['servers'].remove(server['_id'])
-
-    servers_list = [x for x in servers.find({})]
-    keyboard = [
-        [InlineKeyboardButton(x['name'], callback_data=f'subserver_{x["name"]}'),
-         InlineKeyboardButton('✅' if x['_id'] in SUBSCRIPTION[f'{user.id}'].get('servers', []) else '❌',
-                              callback_data=f'subserver_{x["name"]}')] for x in servers_list
-    ]
-    keyboard.append([InlineKeyboardButton('✅' + ' مرحله بعد', callback_data='create_subscription_done')])
-
-    if query.data == "create_subscription_done":
-        if not SUBSCRIPTION[f'{user.id}']['servers']:
-            await query.edit_message_text(
-                "حداقل یک سرور باید انتخاب کنی, "
-                "سرورایی ک میخوای تو اشتراک باشن رو انتخاب کن.", reply_markup=InlineKeyboardMarkup(keyboard)
-            )
-            return
-        else:
-            subs.insert_one(SUBSCRIPTION[f'{user.id}'])
-            del SUBSCRIPTION[f'{user.id}']
-            await query.edit_message_text('لطفا برای بازگشت /start یا دکمه زیر را فشار دهید',
-                                          reply_markup=InlineKeyboardMarkup(
-                                              [[InlineKeyboardButton('پنل ادمین', callback_data="admin")]]))
-
-            return ConversationHandler.END
-
-    await query.edit_message_text(
-        "رواله, "
-        "سرورایی ک میخوای تو اشتراک باشن رو انتخاب کن.", reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    return ConversationHandler.END
 
 
 async def cancel_remove_server(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -167,14 +134,15 @@ async def cancel_remove_server(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 conv_handler = ConversationHandler(per_message=False,
-    entry_points=[CallbackQueryHandler(create_subscription, pattern='^create_subscription$')],
-    states={
-        NAME: [MessageHandler(filters.TEXT, name)],
-        DURATION: [MessageHandler(filters.Regex("^\d"), duration)],
-        TRAFFIC: [MessageHandler(filters.Regex("^\d"), traffic)],
-        USERS: [MessageHandler(filters.Regex("^\d"), users)],
-        SERVERS: [CallbackQueryHandler(subservers, '^subserver_'),
-                  CallbackQueryHandler(subservers, '^create_subscription_done$')]
-    },
-    fallbacks=[CallbackQueryHandler(cancel_remove_server, pattern="^cancel_create_subscription$")],
-)
+                                   entry_points=[
+                                       CallbackQueryHandler(create_subscription, pattern='^create_subscription$')],
+                                   states={
+                                       GROUP: [CallbackQueryHandler(group, pattern='^group_')],
+                                       NAME: [MessageHandler(filters.TEXT, name)],
+                                       DURATION: [MessageHandler(filters.Regex("^\d"), duration)],
+                                       TRAFFIC: [MessageHandler(filters.Regex("^\d"), traffic)],
+                                       USERS: [MessageHandler(filters.Regex("^\d"), users)]
+                                   },
+                                   fallbacks=[CallbackQueryHandler(cancel_remove_server,
+                                                                   pattern="^cancel_create_subscription$")],
+                                   )

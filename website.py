@@ -11,6 +11,7 @@ config.show_label()
 
 svs = config.get_db().servers
 subs = config.get_db().subscriptions
+groups = config.get_db().groups
 
 app = Flask(__name__)
 
@@ -21,7 +22,8 @@ async def response():
     if not uuid:
         return '<p>Not Found</p>'
     for sub in subs.find({}):
-        for client in sub['clients']:
+        group = groups.find_one({'name': sub['group']})
+        for client in group['clients']:
             if client['_id'] == uuid:
                 serv = []
                 for server in sub['servers']:

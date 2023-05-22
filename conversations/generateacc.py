@@ -19,9 +19,11 @@ config = Config('configuration.yaml')
 
 servers = config.get_db().servers
 subs = config.get_db().subscriptions
+groups = config.get_db().groups
+clients = config.get_db().clients
 domain = config.website
 
-NAME, SUBSCRIPTION = range(2)
+NAME, GROUP, SUBSCRIPTION = range(3)
 reply_markup = InlineKeyboardMarkup([
     [InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_remove_server")]
 ])
@@ -55,14 +57,32 @@ async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if client['name'] == update.message.text:
                 await update.message.reply_text('اسم هر اکانت باید جدا باشد لطفا اسم جدید بفرستید')
                 return NAME
+
+    group_list = [x for x in groups.find({})]
     keyboard = [
-        [InlineKeyboardButton(x['name'], callback_data=f'gasubscription_{x["name"]}'),
+        [InlineKeyboardButton(x['name'], callback_data=f'group_{x["name"]}')] for x in group_list if
+        x['status'] == "Active"
+    ]
+    keyboard.append([InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_create_subscription")])
+
+    await update.message.reply_text("گروه مورد نظر را انتخاب کنید", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    return GROUP
+
+
+async def group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+
+    sub_list = [x for x in subs.find({'group': query.data[6:]})]
+    await query.answer()
+    keyboard = [
+        [InlineKeyboardButton(x['name'], callback_data=f'gasubscription_{x["name"]}_{x["group"]}'),
          InlineKeyboardButton(f'{len(x["clients"])}/{x["allowed_users"]}',
-                              callback_data=f'gasubscription_{x["name"]}')] for x in sub_list
+                              callback_data=f'gasubscription_{x["name"]}_{x["group"]}')] for x in sub_list
     ]
     keyboard.append([InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_remove_server")])
 
-    await update.message.reply_text(
+    await query.edit_message_text(
         "رواله, "
         "اشتراکی ک قراره کاربرو بکنی توش رو انتخاب کن.", reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -72,20 +92,24 @@ async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     idi = uuid.uuid4()
+    while clients.find_one({'_id': str(idi)}):
+        idi = uuid.uuid4()
     subscrpt = f'http://{domain}/subscription?uuid={idi}'
-    name = query.data[15:]
-    sub = subs.find_one({'name': name})
+    sub = subs.find_one({'name': query.data.split('_')[1], 'group': query.data.split('_')[2]})
     client = {
         'name': ACCOUNT[query.from_user.id]['name'],
         '_id':
             str(idi),
         'servers': {},
         'usage_per_server': {},
+        'active': True,
+        'subscription': sub['_id'],
         'usage': 0,
         'when': (datetime.datetime.now() + datetime.timedelta(seconds=int(sub['duration']))).timestamp(),
     }
     serv = []
-    for server in sub['servers']:
+    group = groups.find_one({'name': sub['group']})
+    for server in group['servers']:
         server = servers.find_one({'_id': server})
         inbound = util.get_inbound(f'http://{server["ip"]}:{server["port"]}', server['user'], server['password'],
                                    server['inbound_id'])
@@ -109,11 +133,10 @@ async def subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 'utf-8')).decode() + '`\n' + f'{server["name"]}')
         client['servers'][f"{server['_id']}"] = email
         client['usage_per_server'][f"{server['_id']}"] = 0
-    subs.update_one({'name': name}, {'$push': {
-        'clients': client
-    }})
+    clients.insert_one(client)
     await query.edit_message_text(
-        f"اسم اکانت: \n{ACCOUNT[query.from_user.id]['name']}\n\n" + '\n\n'.join(serv) + '\n\n🍩 لینک اشتراک: \n`' + subscrpt + '`', parse_mode='markdown'
+        f"اسم اکانت: \n{ACCOUNT[query.from_user.id]['name']}\n\n" + '\n\n'.join(
+            serv) + '\n\n🍩 لینک اشتراک: \n`' + subscrpt + '`', parse_mode='markdown'
     )
     del ACCOUNT[query.from_user.id]
     return ConversationHandler.END
@@ -134,6 +157,7 @@ conv_handler = ConversationHandler(per_message=False,
                                    entry_points=[CallbackQueryHandler(generate_account, pattern='^generate_account$')],
                                    states={
                                        NAME: [MessageHandler(filters.TEXT, name)],
+                                       GROUP: [CallbackQueryHandler(group, pattern='^group_')],
                                        SUBSCRIPTION: [CallbackQueryHandler(subscription, '^gasubscription_')]
                                    },
                                    fallbacks=[

@@ -11,4 +11,4 @@ prod:
     description:
       "This is a description of what my bot can do which customer will use"
     database:
-      "mongodb+srv://V2rayCS:6chWhR4lh1E85Zwx@cluster0.e69z1kj.mongodb.net/?retryWrites=true&w=majority"
+      "mongodb+srv://V2rayCS:C3zKN3OCufPZhz90@cluster0.e69z1kj.mongodb.net/?retryWrites=true&w=majority"

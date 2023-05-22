@@ -3,7 +3,10 @@ import urllib.parse
 import uuid
 import httpx
 import datetime
+from configuration import Config
+config = Config('configuration.yaml')
 
+subs = config.get_db().subscriptions
 
 def generate_client(limitIp, totalGB, expiryTime, email, idi=None) -> dict:
     if not idi:
@@ -44,6 +47,9 @@ def get_inbound(url, username, password, idi) -> dict:
         if inbound['id'] == idi:
             return inbound
     raise ModuleNotFoundError
+
+
+
 
 
 def add_client(url, username, password, idi, client):
@@ -101,7 +107,3 @@ def get_client(url, username, password, email):
                 if client['email'] == email:
                     return client
     raise ModuleNotFoundError
-
-
-
-add_client('http://91.107.241.55:36671', 'Erdis', 'Erf@n@m0011', 2, generate_client(0, 0.1, 10000, 'Testing'))
