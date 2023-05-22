@@ -28,6 +28,7 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
         [InlineKeyboardButton("ساخت اکانت", callback_data="generate_account")],
         [InlineKeyboardButton("لیست اکانت ها", callback_data="list_account")],
+        [InlineKeyboardButton("بازیابی اکانت", callback_data="restore_account")],
         [InlineKeyboardButton("ساخت اشتراک", callback_data="create_subscription"),
          InlineKeyboardButton('ساخت گروه', callback_data="create_group")],
         [InlineKeyboardButton("ویرایش اشتراک", callback_data="none"),

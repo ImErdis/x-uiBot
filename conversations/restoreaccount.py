@@ -2,6 +2,16 @@ import base64
 import datetime
 import json
 import uuid
+from uuid import UUID
+
+
+def is_valid_uuid(uuid_to_test, version=4):
+    try:
+        uuid_obj = UUID(uuid_to_test, version=version)
+    except ValueError:
+        return False
+    return str(uuid_obj) == uuid_to_test
+
 
 import bson
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -23,7 +33,7 @@ groups = config.get_db().groups
 clients = config.get_db().clients
 domain = config.website
 
-NAME, GROUP, SUBSCRIPTION = range(3)
+NAME, GROUP, SUBSCRIPTION, EXTRASTEP = range(4)
 reply_markup = InlineKeyboardMarkup([
     [InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_remove_server")]
 ])
@@ -37,22 +47,64 @@ async def generate_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     await query.answer()
 
-    await query.edit_message_text("لطفا اسم کاربر را ارسال کنید.", reply_markup=reply_markup)
+    await query.edit_message_text("لطفا اسم کاربر یا uuid خود را ارسال کنید.", reply_markup=reply_markup)
 
     return NAME
 
 
-async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Stores the sent server message"""
+    print(is_valid_uuid(update.message.text))
+    if is_valid_uuid(update.message.text):
+        print('Im here')
+        ACCOUNT[update.message.from_user.id] = {
+            '_id': update.message.text,
+            'subscription': None
+        }
+    else:
+        ACCOUNT[update.message.from_user.id] = {
+            'name': update.message.text,
+            'subscription': None
+        }
+
+    if '_id' in ACCOUNT[update.message.from_user.id]:
+        clientDoc = clients.find_one({'_id': ACCOUNT[update.message.from_user.id]['_id']})
+    else:
+        clientDoc = clients.find_one({'name': ACCOUNT[update.message.from_user.id]['name']})
+    if clientDoc:
+        ACCOUNT[update.message.from_user.id]['name'] = clientDoc['name']
+        ACCOUNT[update.message.from_user.id]['_id'] = clientDoc['_id']
+    if not clientDoc and not is_valid_uuid(update.message.text):
+        await update.message.reply_text('لطفا از آپشن ساخت اکانت استفاده کنید ' +
+                                        'لطفا برای بازگشت /start یا دکمه زیر را فشار دهید',
+                                        reply_markup=InlineKeyboardMarkup(
+                                            [[InlineKeyboardButton('پنل ادمین', callback_data="admin")]]))
+
+        return ConversationHandler.END
+    if not clientDoc and is_valid_uuid(update.message.text):
+        await update.message.reply_text('لطفا اسم مورد نظر خودتون رو برای اکانت بفرستید.', reply_markup=reply_markup)
+        return EXTRASTEP
+
+    group_list = [x for x in groups.find({})]
+    keyboard = [
+        [InlineKeyboardButton(x['name'], callback_data=f'group_{x["name"]}')] for x in group_list if
+        x['status'] == "Active"
+    ]
+    keyboard.append([InlineKeyboardButton("بازگشت ◀️", callback_data="cancel_create_subscription")])
+
+    await update.message.reply_text("گروه مورد نظر را انتخاب کنید", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    return GROUP
+
+
+async def extrastep(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Stores the sent server message"""
 
-    ACCOUNT[update.message.from_user.id] = {
-        'name': update.message.text,
-        'subscription': None
-    }
+    ACCOUNT[update.message.from_user.id]['name'] = update.message.text
 
     if clients.find_one({'name': update.message.text}):
         await update.message.reply_text('اسم هر اکانت باید جدا باشد لطفا اسم جدید بفرستید')
-        return NAME
+        return EXTRASTEP
 
     group_list = [x for x in groups.find({})]
     keyboard = [
@@ -87,10 +139,8 @@ async def group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
-    idi = uuid.uuid4()
-    while clients.find_one({'_id': str(idi)}):
-        idi = uuid.uuid4()
-    subscrpt = f'http://{domain}/subscription?uuid={idi}'
+    clientDoc = clients.find_one({'name': ACCOUNT[query.from_user.id]['name']})
+    idi = uuid.UUID(ACCOUNT[query.from_user.id]['_id'])
     sub = subs.find_one({'name': query.data.split('_')[1], 'group': query.data.split('_')[2]})
     client = {
         'name': ACCOUNT[query.from_user.id]['name'],
@@ -129,10 +179,11 @@ async def subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 'utf-8')).decode() + '`\n' + f'{server["name"]}')
         client['servers'][f"{server['_id']}"] = email
         client['usage_per_server'][f"{server['_id']}"] = 0
-    clients.insert_one(client)
+    clients.insert_one(client) if not clientDoc else clients.update_one({'name': ACCOUNT[query.from_user.id]['name']},
+                                                                        {'$set': client})
     await query.edit_message_text(
         f"اسم اکانت: \n{ACCOUNT[query.from_user.id]['name']}\n\n" + '\n\n'.join(
-            serv) + '\n\n🍩 لینک اشتراک: \n`' + subscrpt + '`', parse_mode='markdown'
+            serv) + '\n\n🍩 لینک اشتراک: \n`' + f'http://{domain}/subscription?uuid={idi}' + '`', parse_mode='markdown'
     )
     del ACCOUNT[query.from_user.id]
     return ConversationHandler.END
@@ -150,11 +201,12 @@ async def cancel_remove_server(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 conv_handler = ConversationHandler(per_message=False,
-                                   entry_points=[CallbackQueryHandler(generate_account, pattern='^generate_account$')],
+                                   entry_points=[CallbackQueryHandler(generate_account, pattern='^restore_account$')],
                                    states={
                                        NAME: [MessageHandler(filters.TEXT, name)],
                                        GROUP: [CallbackQueryHandler(group, pattern='^group_')],
-                                       SUBSCRIPTION: [CallbackQueryHandler(subscription, '^gasubscription_')]
+                                       SUBSCRIPTION: [CallbackQueryHandler(subscription, '^gasubscription_')],
+                                       EXTRASTEP: [MessageHandler(filters.TEXT, extrastep)]
                                    },
                                    fallbacks=[
                                        CallbackQueryHandler(cancel_remove_server, pattern="^cancel_remove_server$")],
