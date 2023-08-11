@@ -42,7 +42,7 @@ async def generate_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return NAME
 
 
-async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the sent server message"""
 
     ACCOUNT[update.message.from_user.id] = {

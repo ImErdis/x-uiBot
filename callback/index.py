@@ -5,14 +5,14 @@ index all function handlers
 """
 
 # imports here -----------------------
-from callback import admin
+from callback import admin, public
 
 command_map = {
     '^admin$': admin.admin,
     '^list_server$': admin.list_server,
     '^list_account$': admin.list_account,
     '^deleteserver_': admin.delete_server,
-    '^edit_subscription$': admin.list_subscription,
+    # '^edit_subscription$': admin.list_subscription,
     # '^editsub_': admin.edit_subscription,
     # '^changeserver_': admin.edit_subscription_servers,
     # '^updatesub_': admin.update_subscription,
@@ -21,6 +21,10 @@ command_map = {
     '^listaccount_': admin.control_account,
     '^controlaccountdelete_': admin.delete_account,
     '^server_': admin.control_server,
+    '^accounts_reseller_': admin.accounts_reseller,
+    '^information_reseller$': admin.information_reseller,
+    '^contact-info$': public.contact,
+    '^account-info_': admin.account_reseller
 
 }
 

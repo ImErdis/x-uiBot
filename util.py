@@ -4,9 +4,11 @@ import uuid
 import httpx
 import datetime
 from configuration import Config
+
 config = Config('configuration.yaml')
 
 subs = config.get_db().subscriptions
+
 
 def generate_client(limitIp, totalGB, expiryTime, email, idi=None) -> dict:
     if not idi:
@@ -27,6 +29,8 @@ def get_inbounds(url, username, password) -> dict:
         }
         r = client.post(url + '/login', data=body)
         r = client.post(url + '/xui/inbound/list', cookies=client.cookies)
+        if not r.is_success:
+            r = client.post(url + '/panel/inbound/list', cookies=client.cookies)
         return json.loads(r.content)['obj']
 
 
@@ -38,18 +42,17 @@ def update_inbound(url, username, password, idi, data):
         }
         client.post(url + '/login', data=body)
         r = client.post(f'{url}/xui/inbound/update/{idi}', json=data)
+        if not r.is_success:
+            r = client.post(f'{url}/panel/inbound/update/{idi}', json=data)
         return r.json()
 
 
-def get_inbound(url, username, password, idi) -> dict:
+def get_inbound(url: str, username: str, password: str, idi: int) -> dict:
     inbounds = get_inbounds(url, username, password)
     for inbound in inbounds:
         if inbound['id'] == idi:
             return inbound
     raise ModuleNotFoundError
-
-
-
 
 
 def add_client(url, username, password, idi, client):

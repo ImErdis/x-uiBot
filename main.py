@@ -70,8 +70,7 @@ def check_loop():
             continue
 
     for client in clients.find({'active': True}):
-        subscription = subs.find_one({'_id': client['subscription']})
-        if (client['usage'] >= subscription['traffic']) or (
+        if (client['usage'] >= client['traffic']) or (
                 client['when'] < datetime.now().timestamp()):
             for server_id in client['servers'].keys():
                 server = servers.find_one({'_id': ObjectId(server_id)})
@@ -81,7 +80,7 @@ def check_loop():
                 except ModuleNotFoundError:
                     pass
 
-            clients.update_one({'_id': client['_id']}, {'$set': {'active': False}, '$unset': {'servers': '', 'usage_per_server': '', 'when': ''}})
+            clients.update_one({'_id': client['_id']}, {'$set': {'active': False}})
 
 
 main()

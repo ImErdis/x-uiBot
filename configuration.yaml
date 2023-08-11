@@ -1,14 +1,14 @@
 mode: prod
 prod:
-  - botname: VingPN
-    username: VingPNBot
+  - botname: VingPN Reseller
+    username: VingPNResellerBot
     admin: 5818413947
-    subscription-domain: "sub.erdis.club"
+    subscription-domain: "sub.vingpn.me"
     token: 
-      6288043295:AAGe9NcCJn8Vz8zcf9J7kQPTX-kOG8sJHXk
+      5905904928:AAH4IiRwmj8u6BEQO37-U1mKmw2TbBLud3A
     about:
       "this is some short text about my bot"
     description:
       "This is a description of what my bot can do which customer will use"
     database:
-      "mongodb+srv://V2rayCS:C3zKN3OCufPZhz90@cluster0.e69z1kj.mongodb.net/?retryWrites=true&w=majority"
+      "mongodb+srv://erf743120:test@cluster0.mcrthsr.mongodb.net/?retryWrites=true&w=majority"
