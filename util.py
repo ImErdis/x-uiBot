@@ -3,11 +3,15 @@ import urllib.parse
 import uuid
 import httpx
 import datetime
+
+from bson import ObjectId
+
 from configuration import Config
 
 config = Config('configuration.yaml')
 
 subs = config.get_db().subscriptions
+clients = config.get_db().clients
 
 
 def generate_client(limitIp, totalGB, expiryTime, email, idi=None) -> dict:
@@ -57,11 +61,17 @@ def get_inbound(url: str, username: str, password: str, idi: int) -> dict:
 
 def add_client(url, username, password, idi, client):
     data = get_inbound(url, username, password, idi)
-    del data['id']
-    del data['tag']
-    del data['clientStats']
+    if 'id' in data:
+        del data['id']
+    if 'tag' in data:
+        del data['tag']
+    if 'clientStats' in data:
+        del data['clientStats']
     settings = json.loads(data['settings'])
-    settings['clients'].append(client)
+    if type(client) == list:
+        settings['clients'] += client
+    else:
+        settings['clients'].append(client)
     data['settings'] = json.dumps(settings)
     response = update_inbound(url, username, password, idi, data)
     return response
@@ -74,7 +84,8 @@ def remove_client(url, username, password, email):
         if any([x['email'] == email for x in settings['clients']]):
             idi = inbound['id']
             del inbound['id']
-            inbound['clientStats'] = None
+            if 'clientStats' in inbound:
+                inbound['clientStats'] = None
             for client in settings['clients']:
                 if client['email'] == email:
                     settings['clients'].remove(client)
@@ -110,3 +121,15 @@ def get_client(url, username, password, email):
                 if client['email'] == email:
                     return client
     raise ModuleNotFoundError
+
+# all_of_clients = []
+# for client in clients.find({'group': ObjectId('6499cac28428645c7786f6c7'), 'active': True}):
+#
+#     clients.update_one({'_id': client['_id']}, {'$set': {
+#             'traffic': client['traffic'] - client['usage'],
+#             'usage': 0,
+#             'usage_per_server.6499ca858428645c7786f6c5': 0
+#         }})
+#     all_of_clients.append(generate_client(0, client['traffic'] - client['usage'], client['when'], client['servers']['6499ca858428645c7786f6c5'], client['_id']))
+#
+# add_client('http://209.38.193.227:36671', 'Erdis', 'Erf@n@m0011', 1, all_of_clients)

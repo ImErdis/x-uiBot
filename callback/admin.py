@@ -39,6 +39,7 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             #  InlineKeyboardButton("ویرایش گروه", callback_data="edit_group")],
             # [InlineKeyboardButton("اضافه کردن سرور", callback_data="add_server")],
             # [InlineKeyboardButton("لیست سرورها", callback_data="list_server")],
+            [InlineKeyboardButton("🗒 لیست نماینده ها", callback_data="list_reseller_1")],
             [InlineKeyboardButton("➕ اضافه کردن نماینده", callback_data="add_reseller")]
         ]
     reseller = resellers.find_one({'_id': query.from_user.id}) or resellers.find_one({'_id': f"{query.from_user.id}"})
@@ -48,7 +49,7 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 نرخ فعلی شما به ازای هر گیگابایت: *{ppg}*
 
-_🌐 به کانال ما (@VingPN) برای اطلاعات بیشتر مراجعه کنید._"""
+"""
         keyboard += [
             [InlineKeyboardButton("💼 اطلاعات حساب", callback_data="information_reseller"),
              InlineKeyboardButton("👥 لیست اکانت ها", callback_data="accounts_reseller_1")],
@@ -58,6 +59,19 @@ _🌐 به کانال ما (@VingPN) برای اطلاعات بیشتر مراج
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
     return ConversationHandler.END
+
+
+async def list_resellers(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    page = int(query.data.split('_')[2])
+
+    keyboard = await resellerhandle.generate_reseller_list(page, update)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = f"""🗒️ نمایندگان *فعال* کنونی به شرح زیر میباشد.
+
+    """
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
 
 async def accounts_reseller(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -72,7 +86,7 @@ async def accounts_reseller(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = f"""🗒️ مشتریان *فعال* کنونی شما به شرح زیر میباشد.
 
-_🌐 به کانال ما (@VingPN) برای اطلاعات بیشتر مراجعه کنید._"""
+"""
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
 
@@ -96,7 +110,7 @@ async def account_reseller(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 - *📮 نام*: _{client['name']}_
 -  *🔑 آیدی*: `{client['_id']} `
 
-_🌐 به کانال ما (@VingPN) برای اطلاعات بیشتر مراجعه کنید._
+
     """
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
@@ -116,12 +130,10 @@ async def information_reseller(update: Update, context: ContextTypes.DEFAULT_TYP
 *- 💰موجودی*: _{reseller["balance"]}_
 *- 💸 کل خرید*: _{reseller["purchased_amount"]}_
 
-_🌐 به کانال ما (@VingPN) برای اطلاعات بیشتر مراجعه کنید._"""
+"""
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
     # async def list_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-
-
 
 
 #     query = update.callback_query

@@ -27,7 +27,7 @@ async def get_reseller_id(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     text = "⚠️ لطفا *آیدی تلگرامی نمایندگی* رو ارسال کنید."
 
-    keyboard = [[InlineKeyboardButton("⏪ بازگشت به پنل ادمین", callback_data="cancel")]]
+    keyboard = [[InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="cancel")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
@@ -43,7 +43,7 @@ async def user_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         'prepayment': True
     }
 
-    keyboard = [[InlineKeyboardButton("⏪ بازگشت به پنل ادمین", callback_data="cancel")]]
+    keyboard = [[InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="cancel")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     text = "💸 لطفا هزینه پرداختی برای *هر گیگ* برای نماینده انتخاب کنید. (تومان)"
@@ -57,11 +57,11 @@ async def ppg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     RESELLER[update.message.from_user.id]['ppg'] = update.message.text
 
-    keyboard = [[InlineKeyboardButton("پیش‌پرداخت", callback_data='add_reseller_ppg'),
-                 InlineKeyboardButton("✅" if RESELLER[update.message.from_user.id]['prepayment'] else "❌",
-                                      callback_data='add_reseller_prepayment')],
-                [InlineKeyboardButton("⏪ بازگشت به پنل ادمین", callback_data="cancel"),
-                 InlineKeyboardButton("✅ اضافه کردن نماینده", callback_data='add_reseller_done')]]
+    keyboard = [[InlineKeyboardButton("✅" if RESELLER[update.message.from_user.id]['prepayment'] else "❌",
+                                      callback_data='add_reseller_prepayment'),
+                 InlineKeyboardButton("پیش‌پرداخت", callback_data='add_reseller_ppg')],
+                [InlineKeyboardButton("✅ اضافه کردن نماینده", callback_data='add_reseller_done')],
+                [InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="cancel")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     text = """🔄 لطفا مشخص کنید که نماینده *پیش‌پرداخت* است یا خیر.
@@ -89,11 +89,11 @@ async def pre_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     RESELLER[user.id]['prepayment'] = not RESELLER[user.id]['prepayment']
 
-    keyboard = [[InlineKeyboardButton("پیش‌پرداخت", callback_data='add_reseller_ppg'),
-                 InlineKeyboardButton("✅" if RESELLER[user.id]['prepayment'] else "❌",
-                                      callback_data='add_reseller_prepayment')],
-                [InlineKeyboardButton("⏪ بازگشت به پنل ادمین", callback_data="cancel"),
-                 InlineKeyboardButton("✅ اضافه کردن نماینده", callback_data='add_reseller_done')]]
+    keyboard = [[InlineKeyboardButton("✅" if RESELLER[user.id]['prepayment'] else "❌",
+                                      callback_data='add_reseller_prepayment'),
+                 InlineKeyboardButton("پیش‌پرداخت", callback_data='add_reseller_ppg')],
+                [InlineKeyboardButton("✅ اضافه کردن نماینده", callback_data='add_reseller_done')],
+                [InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="cancel")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     text = """🔄 لطفا مشخص کنید که نماینده *پیش‌پرداخت* است یا خیر.

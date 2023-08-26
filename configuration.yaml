@@ -2,7 +2,7 @@ mode: prod
 prod:
   - botname: VingPN Reseller
     username: VingPNResellerBot
-    admin: 5818413947
+    admin: 1211590718
     subscription-domain: "sub.vingpn.me"
     token: 
       5905904928:AAH4IiRwmj8u6BEQO37-U1mKmw2TbBLud3A
