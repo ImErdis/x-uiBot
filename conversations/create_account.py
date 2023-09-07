@@ -35,6 +35,10 @@ async def create_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer()
 
+    reseller = resellers.find_one({'_id': int(query.from_user.id)})
+    if not reseller or not reseller.get('enable', True):
+        return ConversationHandler.END
+
     text = "🔍 لطفا *اسم اکانت* رو بفرستید."
 
     keyboard = [[InlineKeyboardButton("⏪ بازگشت به پنل ادمین", callback_data="cancel")]]

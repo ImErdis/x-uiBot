@@ -5,7 +5,7 @@ index all function handlers
 """
 
 # imports here -----------------------
-from callback import admin, public
+from callback import admin, public, toggle_reseller
 
 command_map = {
     '^admin$': admin.admin,
@@ -26,7 +26,8 @@ command_map = {
     '^contact-info$': public.contact,
     '^account-info_': admin.account_reseller,
     '^list_reseller_': admin.list_resellers,
-    '^reseller_':admin.reseller_control
+    '^reseller_': admin.reseller_control,
+    '^disable_reseller_': toggle_reseller.disable_reseller
 
 }
 

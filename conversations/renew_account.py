@@ -35,8 +35,11 @@ async def renew_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     query = update.callback_query
     await query.answer()
 
+    reseller = resellers.find_one({'_id': int(query.from_user.id)})
+    if not reseller or not reseller.get('enable', True):
+        return ConversationHandler.END
+
     _id = query.data.split('_')[1]
-    print(_id)
     client = clients.find_one({'_id': _id, 'reseller': query.from_user.id, 'active': False})
     if not client:
         return ConversationHandler.END

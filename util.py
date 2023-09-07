@@ -81,14 +81,18 @@ def remove_client(url, username, password, email):
     inbounds = get_inbounds(url, username, password)
     for inbound in inbounds:
         settings = json.loads(inbound['settings'])
-        if any([x['email'] == email for x in settings['clients']]):
+        if any([bool(x['email'] == email) for x in settings['clients']]) or any([bool(x['email'] in email) for x in settings['clients']]):
             idi = inbound['id']
             del inbound['id']
             if 'clientStats' in inbound:
                 inbound['clientStats'] = None
             for client in settings['clients']:
-                if client['email'] == email:
-                    settings['clients'].remove(client)
+                if type(email) == list:
+                    if client['email'] in email:
+                        settings['clients'].remove(client)
+                else:
+                    if client['email'] == email:
+                        settings['clients'].remove(client)
             inbound['settings'] = json.dumps(settings)
             response = update_inbound(url, username, password, idi, inbound)
             return response
