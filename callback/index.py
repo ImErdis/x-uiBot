@@ -25,7 +25,8 @@ command_map = {
     '^information_reseller$': admin.information_reseller,
     '^contact-info$': public.contact,
     '^account-info_': admin.account_reseller,
-    '^list_reseller_': admin.list_resellers
+    '^list_reseller_': admin.list_resellers,
+    '^reseller_':admin.reseller_control
 
 }
 

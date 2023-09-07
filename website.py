@@ -21,8 +21,8 @@ app = Flask(__name__)
 async def response():
     uuid = request.args.get('uuid', default='', type=str)
     if not uuid:
-        return '<p>Not Found</p>'
-    client = clients.find_one({'_id': uuid})
+        return '<h1>Not Found</h1>'
+    client = clients.find_one({'_id': uuid, 'active': True})
     if client:
         serv = []
         for server_id in client['servers'].keys():
@@ -50,7 +50,7 @@ async def response():
                     'utf-8')).decode())
         text = '\n'.join(serv)
         return text
-    return '<p>Not Found</p>'
+    return '<h1>Not Found</h1>'
 
 
 app.run(host='0.0.0.0', port=80, threaded=True)

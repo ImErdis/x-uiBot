@@ -116,8 +116,8 @@ async def generate_reseller_list(page: int, update: Update):
         except telegram.error.BadRequest:
             continue
         keyboard.append([
-        InlineKeyboardButton(f'{x["balance"] - x["purchased_amount"]}ت', callback_data=f'reseller_{x["_id"]}'),
-        InlineKeyboardButton(f'{chat.username}', callback_data=f'reseller_{x["_id"]}')
+            InlineKeyboardButton(f'{x["balance"] - x["purchased_amount"]}ت', callback_data=f'reseller_{x["_id"]}'),
+            InlineKeyboardButton(f'{chat.username}', callback_data=f'reseller_{x["_id"]}')
         ])
     pagination_buttons = []
     pagination_buttons.append(InlineKeyboardButton("صفحه قبل ⬅️",
@@ -125,5 +125,32 @@ async def generate_reseller_list(page: int, update: Update):
     pagination_buttons.append(InlineKeyboardButton("➡️ صفحه بعد",
                                                    callback_data=f'accounts_reseller_{page + 1}')) if rs_count - page * 30 > 0 else None
     keyboard.append(pagination_buttons) if pagination_buttons else None
+    keyboard.append([InlineKeyboardButton("📨 پیام به همه", callback_data="message_reseller_all")])
+    keyboard.append([InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="admin")])
+    return keyboard
+
+
+async def generate_reseller_info(reseller_id: int, update: Update):
+    reseller = resellers.find_one({'_id': reseller_id})
+    keyboard = []
+    try:
+        chat = await update.get_bot().get_chat(reseller["_id"])
+        keyboard.append([
+            InlineKeyboardButton('💰 موجودی', callback_data='notabutton'),
+            InlineKeyboardButton('📱 یوزرنیم', callback_data='notabutton')
+        ])
+        keyboard.append([
+            InlineKeyboardButton(f'{reseller["balance"] - reseller["purchased_amount"]}T',
+                                 callback_data=f'notabutton'),
+            InlineKeyboardButton(f'{chat.username}', callback_data=f'notabutton')
+        ])
+        keyboard.append([
+            InlineKeyboardButton('❌ غیرفعال سازی', callback_data=f'disable_reseller_{reseller["_id"]}') if reseller.get(
+                'enable', True) else InlineKeyboardButton('✅ فعال سازی',
+                                                           callback_data=f'enable_reseller_{reseller["_id"]}')
+        ])
+        keyboard.append([InlineKeyboardButton("📨 پیام به نماینده", callback_data=f'message_reseller_{reseller["_id"]}')])
+    except telegram.error.BadRequest:
+        pass
     keyboard.append([InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="admin")])
     return keyboard

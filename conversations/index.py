@@ -6,7 +6,7 @@ index all function handlers
 
 # imports here -----------------------
 from conversations import addserver, createsubscription, generateacc, replaceserver, creategroup, restoreaccount, \
-    add_reseller, create_account, search_account, renew_account
+    add_reseller, create_account, search_account, renew_account, message_reseller
 
 convs = [addserver.conv_handler,
          createsubscription.conv_handler,
@@ -17,7 +17,8 @@ convs = [addserver.conv_handler,
          add_reseller.conv_handler,
          create_account.conv_handler,
          search_account.conv_handler,
-         renew_account.conv_handler]
+         renew_account.conv_handler,
+         message_reseller.conv_handler]
 
 
 # --------------------------------------

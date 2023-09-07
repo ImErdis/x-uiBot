@@ -251,7 +251,7 @@ async def group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             serv) + '\n\n🍩 لینک اشتراک: \n`' + subscrpt + '`', parse_mode='markdown'
     )
     resellers.update_one({'_id': user.id}, {
-        '$inc': {'purchased_amount': int(reseller['ppg']) * client['traffic'] + int(ACCOUNT[f'{query.from_user.id}']['duration'] * 15000)}
+        '$inc': {'purchased_amount': int(reseller['ppg']) * client['traffic'] + int((ACCOUNT[f'{query.from_user.id}']['duration']-1) * 15000)}
     })
     profit = int(reseller['ppg']) * client['traffic']
     pure_profit = profit - (client['traffic'] * 700 + int(ACCOUNT[f'{query.from_user.id}']['duration'] * 7000))

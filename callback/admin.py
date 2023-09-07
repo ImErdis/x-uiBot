@@ -115,6 +115,22 @@ async def account_reseller(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
 
+async def reseller_control(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    _id = query.data.split('_')[1]
+    reseller = resellers.find_one({'_id': int(_id)})
+    if not reseller:
+        return
+
+    keyboard = await resellerhandle.generate_reseller_info(int(_id), update)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = f"""
+    💼 اطلاعات *نماینده*. _(وضعیت: {'🟢 فعال' if reseller.get("enable", True) else '🔴 غیرفعال'})_
+    """
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+
+
 async def information_reseller(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
