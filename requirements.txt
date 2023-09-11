@@ -1,7 +1,7 @@
 ansimarkup==1.5.0
 anyio==3.6.2
 APScheduler==3.10.1
-certifi==2022.12.7
+certifi==2023.7.22
 colorama==0.4.6
 dnspython==2.3.0
 h11==0.14.0
