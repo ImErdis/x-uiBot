@@ -12,6 +12,7 @@ config = Config('configuration.yaml')
 
 subs = config.get_db().subscriptions
 clients = config.get_db().clients
+subscriptions = config.get_db().subscriptions
 
 
 def generate_client(limitIp, totalGB, expiryTime, email, idi=None) -> dict:
@@ -81,7 +82,8 @@ def remove_client(url, username, password, email):
     inbounds = get_inbounds(url, username, password)
     for inbound in inbounds:
         settings = json.loads(inbound['settings'])
-        if any([bool(x['email'] == email) for x in settings['clients']]) or any([bool(x['email'] in email) for x in settings['clients']]):
+        if any([bool(x['email'] == email) for x in settings['clients']]) or any(
+                [bool(x['email'] in email) for x in settings['clients']]):
             idi = inbound['id']
             del inbound['id']
             if 'clientStats' in inbound:
@@ -127,13 +129,22 @@ def get_client(url, username, password, email):
     raise ModuleNotFoundError
 
 # all_of_clients = []
-# for client in clients.find({'group': ObjectId('6499cac28428645c7786f6c7'), 'active': True}):
+# clients.delete_many({'_id': {'$in': [x['_id'] for x in clients_to_be_added]}})
+# for client in clients_to_be_added:
+#     client['usage_per_server'] = {}
+#     client['servers'] = {
+#         '650751f30cf1d5039a932050': client['servers']['6462a8b71204b93633be5bf0']
+#     }
 #
-#     clients.update_one({'_id': client['_id']}, {'$set': {
-#             'traffic': client['traffic'] - client['usage'],
-#             'usage': 0,
-#             'usage_per_server.6499ca858428645c7786f6c5': 0
-#         }})
-#     all_of_clients.append(generate_client(0, client['traffic'] - client['usage'], client['when'], client['servers']['6499ca858428645c7786f6c5'], client['_id']))
+#     client['traffic'] = client['traffic'] - client['usage']
+#     client['usage'] = 0
+#     del client['subscription']
+#     client['reseller'] = 1211590718
+#     client['group'] = ObjectId('650753b4e0b98bce64786aa5')
+#     if client['traffic'] > 0:
+#         if not clients.find_one({'_id': client['_id']}):
+#             clients.insert_one(client
+#             )
+#         all_of_clients.append(generate_client(0, client['traffic'] - client['usage'], client['when'], client['servers']['650751f30cf1d5039a932050'], client['_id']))
 #
-# add_client('http://209.38.193.227:36671', 'Erdis', 'Erf@n@m0011', 1, all_of_clients)
+# add_client('http://165.227.162.85:36671', 'Erdis', 'Erf@n@m0011', 2, all_of_clients)

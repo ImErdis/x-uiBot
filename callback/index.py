@@ -27,7 +27,8 @@ command_map = {
     '^account-info_': admin.account_reseller,
     '^list_reseller_': admin.list_resellers,
     '^reseller_': admin.reseller_control,
-    '^disable_reseller_': toggle_reseller.disable_reseller
+    '^disable_reseller_': toggle_reseller.disable_reseller,
+    '^enable_reseller_': toggle_reseller.enable_reseller
 
 }
 

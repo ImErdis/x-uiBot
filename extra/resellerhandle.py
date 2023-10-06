@@ -49,13 +49,13 @@ def generate_accounts_list(page: int, reseller: int):
                     InlineKeyboardButton(f"{datetime.datetime.fromtimestamp(x['when']).strftime('%Y/%m/%d')}",
                                          callback_data=f'account-info_{x["_id"]}')]
                    for x in
-                   accounts[(page - 1) * 30:page * 30]
+                   accounts[(page - 1) * 28:page * 28]
                ]
     pagination_buttons = []
     pagination_buttons.append(InlineKeyboardButton("صفحه قبل ⬅️",
                                                    callback_data=f'accounts_reseller_{page - 1}')) if page > 1 else None
     pagination_buttons.append(InlineKeyboardButton("➡️ صفحه بعد",
-                                                   callback_data=f'accounts_reseller_{page + 1}')) if accounts_count - page * 30 > 0 else None
+                                                   callback_data=f'accounts_reseller_{page + 1}')) if accounts_count - page * 28 > 0 else None
     keyboard.append(pagination_buttons) if pagination_buttons else None
     keyboard.append([InlineKeyboardButton("🔍 جست‌وجو کاربر", callback_data="search_user")])
     keyboard.append([InlineKeyboardButton("🖥️ بازگشت به پنل", callback_data="admin")])
